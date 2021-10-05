@@ -1,0 +1,95 @@
+---
+title: "DS202 Lab 3"
+author: "Muhammad Khairi Norizan"
+date: "10/3/2021"
+output: html_document
+---
+
+```{r, echo=FALSE}
+dat <- readxl::read_xls('./GSS.xls')
+
+library(dplyr)
+library(ggplot2)
+
+
+# Data Engineering
+dat <- dat %>% rename(Year = `Gss year for this respondent`, Happiness = `General happiness`, Politics = `Political party affiliation`, FamilyIncome = `Total family income`, Gender = `Respondents sex`, YearsSchoolCompleted = `Highest year of school completed`, MaritalStatus = `Marital status`, HoursWorkPerWeek = `Number of hours usually work a week`, id = `Respondent id number`, Ballot = `Ballot used for interview`)
+
+# Remove not numeric and na rows
+dat <- dat %>% 
+  filter(!is.na(as.numeric(YearsSchoolCompleted)))
+
+# Convert column years school completed to numerical values
+dat$YearsSchoolCompleted = strtoi(dat$YearsSchoolCompleted)
+```
+
+## Exploration
+
+#### Question 1
+
+Find the average years of education for the respondents with each marital status. Arrange your output in a meaningful order and print. Describe any patterns you find.
+
+```{r}
+selectedDat <- dat %>% 
+  group_by(MaritalStatus) %>% 
+  summarize(AvgYearsSchoolCompleted = mean(YearsSchoolCompleted))
+
+selectedDat <- selectedDat %>% 
+  arrange(desc(AvgYearsSchoolCompleted))
+
+ggplot(selectedDat, aes(x=MaritalStatus, y=AvgYearsSchoolCompleted, fill=MaritalStatus)) + geom_bar(stat="identity")
+
+```
+
+#### Question 2
+
+Create a single data frame containing records for the better educated respondents with each marital status. A "better educated" respondent is someone who has strictly more years of education than the average among those with the same marital status. Print the structure of the data frame.
+
+```{r, echo=FALSE}
+dat <- dat %>% 
+  filter(!is.na(as.numeric(YearsSchoolCompleted)))
+
+dat$YearsSchoolCompleted = strtoi(dat$YearsSchoolCompleted)
+
+## Remove any row that is lower than selectedDat
+#betterEducatedFilter <- filter(dat, MaritalStatus %in% selectedDat$MaritalStatus & 
+#                                YearsSchoolCompleted > selectedDat$AvgYearsSchoolCompleted)
+
+```
+
+#### Question 3
+
+How is the happiness of a respondent related to his/her marriage status? Define that a person is happy if the response to question is "Very happy" or "Pretty happy".
+
+```{r}
+happiness <- dat %>% 
+  filter(Happiness %in% c('Very happy','Pretty happy'))
+
+ggplot(data = happiness) + geom_bar(mapping = aes(x = MaritalStatus, fill = Happiness), position = 'fill') + coord_flip()
+
+```
+
+#### Question 4
+
+Does party affiliation affect the relationship you found in the last question
+
+```{r}
+ggplot(data=happiness, mapping=aes(x=MaritalStatus, y=Happiness)) + 
+geom_point(aes(color=Politics))
+
+
+```
+
+#### Question 5
+
+Explore an interesting question (not covered by the previous questions), and answer the question using the GSS data.
+\
+Question: How Gender and MaritalStatus affecting the Year School Completed
+
+```{r}
+selectedDat <- dat %>% 
+  group_by(MaritalStatus, Gender) %>% 
+  summarize(AvgYearsSchoolCompleted = mean(YearsSchoolCompleted))
+
+ggplot(selectedDat, aes(x=MaritalStatus, y=AvgYearsSchoolCompleted, fill=Gender)) + geom_bar(stat="identity")
+```
